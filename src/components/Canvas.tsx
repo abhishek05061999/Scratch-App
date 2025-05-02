@@ -53,14 +53,75 @@ const Canvas: React.FC<CanvasProps> = ({ sprites, setSprites, activeSprite }) =>
     };
   };
   
+  // Check for sprite collisions - Hero Feature
+  const checkForCollisions = (updatedSprites: Sprite[]): Sprite[] => {
+    const COLLISION_THRESHOLD = 50; // Distance for collision detection
+
+    // Check each pair of sprites for collisions
+    for (let i = 0; i < updatedSprites.length; i++) {
+      for (let j = i + 1; j < updatedSprites.length; j++) {
+        const sprite1 = updatedSprites[i];
+        const sprite2 = updatedSprites[j];
+        
+        // Calculate distance between sprites
+        const distance = Math.sqrt(
+          Math.pow(sprite1.x - sprite2.x, 2) + 
+          Math.pow(sprite1.y - sprite2.y, 2)
+        );
+        
+        // If sprites are colliding, swap their animation blocks
+        if (distance < COLLISION_THRESHOLD && sprite1.isRunning && sprite2.isRunning) {
+          // Swap blocks between sprites
+          const tempBlocks = [...sprite1.blocks];
+          updatedSprites[i] = { ...sprite1, blocks: [...sprite2.blocks] };
+          updatedSprites[j] = { ...sprite2, blocks: tempBlocks };
+          
+          // Show collision notification
+          showCollisionNotification();
+          
+          // Break after first collision to avoid multiple swaps in one frame
+          break;
+        }
+      }
+    }
+    
+    return updatedSprites;
+  };
+  
+  // Show collision notification
+  const showCollisionNotification = () => {
+    const notification = document.createElement('div');
+    notification.textContent = 'Hero Feature: Animations Swapped!';
+    notification.style.position = 'absolute';
+    notification.style.top = '10px';
+    notification.style.left = '50%';
+    notification.style.transform = 'translateX(-50%)';
+    notification.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    notification.style.color = 'white';
+    notification.style.padding = '10px 20px';
+    notification.style.borderRadius = '5px';
+    notification.style.zIndex = '100';
+    notification.style.transition = 'opacity 1s';
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 1000);
+    }, 2000);
+  };
+  
   // Handle sprite animation/execution
   useEffect(() => {
     const runningSprites = sprites.filter(s => s.isRunning);
     if (runningSprites.length === 0) return;
     
     const interval = setInterval(() => {
-      setSprites(prevSprites => 
-        prevSprites.map(sprite => {
+      setSprites(prevSprites => {
+        // Process sprite movements and actions
+        let updatedSprites = prevSprites.map(sprite => {
           if (!sprite.isRunning) return sprite;
           
           let updatedSprite = { ...sprite };
@@ -187,8 +248,13 @@ const Canvas: React.FC<CanvasProps> = ({ sprites, setSprites, activeSprite }) =>
           }
           
           return updatedSprite;
-        })
-      );
+        });
+        
+        // Check for collisions after updating all sprite positions
+        updatedSprites = checkForCollisions(updatedSprites);
+        
+        return updatedSprites;
+      });
     }, 100); // Update every 100ms
     
     return () => clearInterval(interval);

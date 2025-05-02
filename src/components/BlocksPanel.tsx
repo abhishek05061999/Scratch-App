@@ -27,6 +27,34 @@ const blockCategories: BlockCategory[] = [
         }
       },
       {
+        name: 'Move X by -10',
+        action: 'move',
+        params: {
+          steps: {
+            type: 'number',
+            defaultValue: -10
+          },
+          direction: {
+            type: 'text',
+            defaultValue: 'x'
+          }
+        }
+      },
+      {
+        name: 'Move X by +10',
+        action: 'move',
+        params: {
+          steps: {
+            type: 'number',
+            defaultValue: 10
+          },
+          direction: {
+            type: 'text',
+            defaultValue: 'x'
+          }
+        }
+      },
+      {
         name: 'Move Y by 50',
         action: 'move',
         params: {

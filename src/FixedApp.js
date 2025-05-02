@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 
 // Constants
 const REPEAT_COUNT = 5; // Number of times to repeat actions
-let cycleCollisionOccurred = false; // Flag to track if collision has occurred this cycle
 
 function App() {
   const [sprites, setSprites] = useState([
@@ -19,6 +18,7 @@ function App() {
   // Use refs for animation state to avoid dependency issues
   const isPlayingRef = useRef(false);
   const activeTimeoutsRef = useRef([]);
+  const collisionOccurredRef = useRef(false);
   
   const activeSprite = sprites.find(sprite => sprite.id === activeSpriteId) || sprites[0];
 
@@ -44,6 +44,46 @@ function App() {
       clearAllTimeouts();
     };
   }, [message.timer]);
+
+  // Process actions and expand repeats for a sprite
+  const expandActionsForSprite = (sprite) => {
+    const actions1 = sprite.actions || [];
+    const actions2 = sprite.actions2 || [];
+    let expandedActions = [];
+    
+    // Process first action list
+    let repeatIndex1 = actions1.indexOf('repeat');
+    if (repeatIndex1 > 0) {
+      // Get actions before repeat
+      const actionsToRepeat = actions1.slice(0, repeatIndex1);
+      // Add them multiple times
+      for (let i = 0; i < REPEAT_COUNT; i++) {
+        expandedActions = [...expandedActions, ...actionsToRepeat];
+      }
+    } else {
+      // No repeat, just add the actions
+      expandedActions = [...expandedActions, ...actions1];
+    }
+    
+    // Process second action list
+    let repeatIndex2 = actions2.indexOf('repeat');
+    if (repeatIndex2 > 0) {
+      // Get actions before repeat
+      const actionsToRepeat = actions2.slice(0, repeatIndex2);
+      // Add them multiple times
+      for (let i = 0; i < REPEAT_COUNT; i++) {
+        expandedActions = [...expandedActions, ...actionsToRepeat];
+      }
+    } else {
+      // No repeat, just add the actions
+      expandedActions = [...expandedActions, ...actions2];
+    }
+    
+    // Filter out any repeat tokens that might have been added
+    expandedActions = expandedActions.filter(action => action !== 'repeat');
+    
+    return expandedActions;
+  };
 
   // Handle sprite dragging
   const handleMouseDown = (e, spriteId) => {
@@ -169,6 +209,9 @@ function App() {
     // Reset message
     setMessage({ text: '', timer: null });
     
+    // Reset collision flag
+    collisionOccurredRef.current = false;
+    
     // Reset to initial state with only the original cat sprite and no actions
     setSprites([{ 
       id: 1, 
@@ -230,65 +273,10 @@ function App() {
     setActions(updatedActions);
   };
 
-  // Process actions and expand repeats for a sprite
-  const expandActionsForSprite = (sprite) => {
-    const actions1 = sprite.actions || [];
-    const actions2 = sprite.actions2 || [];
-    let expandedActions = [];
-    
-    // Process first action list
-    let repeatIndex1 = actions1.indexOf('repeat');
-    if (repeatIndex1 > 0) {
-      // Get actions before repeat
-      const actionsToRepeat = actions1.slice(0, repeatIndex1);
-      // Add them multiple times
-      for (let i = 0; i < REPEAT_COUNT; i++) {
-        expandedActions = [...expandedActions, ...actionsToRepeat];
-      }
-    } else {
-      // No repeat, just add the actions
-      expandedActions = [...expandedActions, ...actions1];
-    }
-    
-    // Process second action list
-    let repeatIndex2 = actions2.indexOf('repeat');
-    if (repeatIndex2 > 0) {
-      // Get actions before repeat
-      const actionsToRepeat = actions2.slice(0, repeatIndex2);
-      // Add them multiple times
-      for (let i = 0; i < REPEAT_COUNT; i++) {
-        expandedActions = [...expandedActions, ...actionsToRepeat];
-      }
-    } else {
-      // No repeat, just add the actions
-      expandedActions = [...expandedActions, ...actions2];
-    }
-    
-    // Filter out any repeat tokens that might have been added
-    expandedActions = expandedActions.filter(action => action !== 'repeat');
-    
-    return expandedActions;
-  };
-
-  // Handle play button click
-  const handlePlay = () => {
-    // If already playing, stop first
-    if (isPlaying) {
-      setIsPlaying(false);
-      isPlayingRef.current = false;
-      clearAllTimeouts();
-      return;
-    }
-    
-    // Clear any existing timeouts before starting
-    clearAllTimeouts();
-    
-    // Set playing state
-    setIsPlaying(true);
-    isPlayingRef.current = true;
-    
-    // Reset collision flag when starting
-    cycleCollisionOccurred = false;
+  // Start animations for all sprites (extracted from handlePlay for reuse)
+  const startAnimations = (delayOffset = 0) => {
+    // Reset collision flag
+    collisionOccurredRef.current = false;
     
     // For each sprite, execute its actions
     sprites.forEach(sprite => {
@@ -325,8 +313,8 @@ function App() {
         executeAction(currentSprite, currentAction, executeNextAction);
       };
       
-      // Start with slight delay to ensure state is settled
-      const startTimeout = setTimeout(executeNextAction, 50 + (sprite.id * 10));
+      // Use a consistent start delay for all sprites to ensure uniform animation
+      const startTimeout = setTimeout(executeNextAction, delayOffset + 50);
       activeTimeoutsRef.current.push(startTimeout);
     });
     
@@ -344,7 +332,7 @@ function App() {
         isPlayingRef.current = false;
         
         // Reset collision flag when animations complete
-        cycleCollisionOccurred = false;
+        collisionOccurredRef.current = false;
         
         clearInterval(checkFinishedTimeout);
       }
@@ -352,284 +340,12 @@ function App() {
     activeTimeoutsRef.current.push(checkFinishedTimeout);
   };
 
-  // Execute a single action
-  const executeAction = (sprite, action, callback) => {
-    // Stop if we're no longer playing
-    if (!isPlayingRef.current) {
-      return;
-    }
-    
-    console.log('Executing action:', action, 'for sprite:', sprite.id);
-    
-    // Duration for movement actions
-    const moveDuration = 500;
-    
-    switch(action) {
-      case 'moveX':
-        // Move 50 pixels in X direction
-        const newX = sprite.x + 50;
-        setSprites(prevSprites => {
-          return prevSprites.map(s => 
-            s.id === sprite.id ? { ...s, x: newX } : s
-          );
-        });
-        
-        // Check for collisions after state update
-        setTimeout(() => {
-          if (isPlayingRef.current) {
-            // Only check for collisions if one hasn't already occurred
-            if (!cycleCollisionOccurred) {
-              checkAllCollisions();
-            }
-            
-            // Continue to next action as long as we're still playing
-            if (isPlayingRef.current && callback) {
-              callback();
-            }
-          }
-        }, moveDuration);
-        break;
-        
-      case 'moveXMinus10':
-        // Move -10 pixels in X direction
-        const newXMinus = sprite.x - 10;
-        setSprites(prevSprites => {
-          return prevSprites.map(s => 
-            s.id === sprite.id ? { ...s, x: newXMinus } : s
-          );
-        });
-        
-        // Check for collisions after state update
-        setTimeout(() => {
-          if (isPlayingRef.current) {
-            // Only check for collisions if one hasn't already occurred
-            if (!cycleCollisionOccurred) {
-              checkAllCollisions();
-            }
-            
-            // Continue to next action as long as we're still playing
-            if (isPlayingRef.current && callback) {
-              callback();
-            }
-          }
-        }, moveDuration);
-        break;
-        
-      case 'moveXPlus10':
-        // Move +10 pixels in X direction
-        const newXPlus = sprite.x + 10;
-        setSprites(prevSprites => {
-          return prevSprites.map(s => 
-            s.id === sprite.id ? { ...s, x: newXPlus } : s
-          );
-        });
-        
-        // Check for collisions after state update
-        setTimeout(() => {
-          if (isPlayingRef.current) {
-            // Only check for collisions if one hasn't already occurred
-            if (!cycleCollisionOccurred) {
-              checkAllCollisions();
-            }
-            
-            // Continue to next action as long as we're still playing
-            if (isPlayingRef.current && callback) {
-              callback();
-            }
-          }
-        }, moveDuration);
-        break;
-        
-      case 'moveY':
-        // Move 50 pixels in Y direction
-        const newY = sprite.y + 50;
-        setSprites(prevSprites => {
-          return prevSprites.map(s => 
-            s.id === sprite.id ? { ...s, y: newY } : s
-          );
-        });
-        
-        // Check for collisions after state update
-        setTimeout(() => {
-          if (isPlayingRef.current) {
-            // Only check for collisions if one hasn't already occurred
-            if (!cycleCollisionOccurred) {
-              checkAllCollisions();
-            }
-            
-            // Continue to next action as long as we're still playing
-            if (isPlayingRef.current && callback) {
-              callback();
-            }
-          }
-        }, moveDuration);
-        break;
-        
-      case 'goTo00':
-        // Move to position 0,0
-        setSprites(prevSprites => {
-          return prevSprites.map(s => 
-            s.id === sprite.id ? { ...s, x: 0, y: 0 } : s
-          );
-        });
-        
-        // Check for collisions after state update
-        setTimeout(() => {
-          if (isPlayingRef.current) {
-            // Only check for collisions if one hasn't already occurred
-            if (!cycleCollisionOccurred) {
-              checkAllCollisions();
-            }
-            
-            // Continue to next action as long as we're still playing
-            if (isPlayingRef.current && callback) {
-              callback();
-            }
-          }
-        }, moveDuration);
-        break;
-        
-      case 'moveXY':
-        // Move 50 pixels in both X and Y
-        const newXY = { x: sprite.x + 50, y: sprite.y + 50 };
-        setSprites(prevSprites => {
-          return prevSprites.map(s => 
-            s.id === sprite.id ? { ...s, ...newXY } : s
-          );
-        });
-        
-        // Check for collisions after state update
-        setTimeout(() => {
-          if (isPlayingRef.current) {
-            // Only check for collisions if one hasn't already occurred
-            if (!cycleCollisionOccurred) {
-              checkAllCollisions();
-            }
-            
-            // Continue to next action as long as we're still playing
-            if (isPlayingRef.current && callback) {
-              callback();
-            }
-          }
-        }, moveDuration);
-        break;
-        
-      case 'goRandom':
-        // Move to random position
-        if (canvasRef.current) {
-          const rect = canvasRef.current.getBoundingClientRect();
-          const randomX = Math.floor(Math.random() * (rect.width - 50));
-          const randomY = Math.floor(Math.random() * (rect.height - 50));
-          
-          setSprites(prevSprites => {
-            return prevSprites.map(s => 
-              s.id === sprite.id ? { ...s, x: randomX, y: randomY } : s
-            );
-          });
-        }
-        
-        // Check for collisions after state update
-        setTimeout(() => {
-          if (isPlayingRef.current) {
-            // Only check for collisions if one hasn't already occurred
-            if (!cycleCollisionOccurred) {
-              checkAllCollisions();
-            }
-            
-            // Continue to next action as long as we're still playing
-            if (isPlayingRef.current && callback) {
-              callback();
-            }
-          }
-        }, moveDuration);
-        break;
-      
-      // Other cases (non-movement)
-      default:
-        // For other actions like say hello, rotate, change size
-        if (action === 'sayHello' || action === 'sayHello1Sec') {
-          // Display speech bubble
-          setMessage({ 
-            text: 'Hello!', 
-            spriteId: sprite.id,
-            timer: null
-          });
-          
-          const timer = setTimeout(() => {
-            if (isPlayingRef.current) {
-              setMessage({ text: '', timer: null });
-              if (callback) callback();
-            }
-          }, 1000);
-          activeTimeoutsRef.current.push(timer);
-          setMessage(prev => ({ ...prev, timer }));
-          
-        } else if (action === 'rotate') {
-          // Rotate the sprite
-          setSprites(prevSprites => {
-            const updatedSprite = prevSprites.find(s => s.id === sprite.id);
-            if (!updatedSprite) return prevSprites;
-            
-            const currentRotation = updatedSprite.rotation || 0;
-            return prevSprites.map(s => 
-              s.id === sprite.id ? { 
-                ...s, 
-                rotation: currentRotation + 360  // Full 360-degree rotation
-              } : s
-            );
-          });
-          
-          const rotateTimeout = setTimeout(() => {
-            if (isPlayingRef.current && callback) callback();
-          }, 1000);
-          activeTimeoutsRef.current.push(rotateTimeout);
-          
-        } else if (action === 'increaseSize') {
-          // Increase sprite size
-          setSprites(prevSprites => {
-            const updatedSprite = prevSprites.find(s => s.id === sprite.id);
-            if (!updatedSprite) return prevSprites;
-            
-            return prevSprites.map(s => 
-              s.id === sprite.id ? { ...s, size: s.size * 1.2 } : s
-            );
-          });
-          
-          const increaseSizeTimeout = setTimeout(() => {
-            if (isPlayingRef.current && callback) callback();
-          }, 500);
-          activeTimeoutsRef.current.push(increaseSizeTimeout);
-          
-        } else if (action === 'decreaseSize') {
-          // Decrease sprite size
-          setSprites(prevSprites => {
-            const updatedSprite = prevSprites.find(s => s.id === sprite.id);
-            if (!updatedSprite) return prevSprites;
-            
-            return prevSprites.map(s => 
-              s.id === sprite.id ? { ...s, size: Math.max(0.5, s.size * 0.8) } : s
-            );
-          });
-          
-          const decreaseSizeTimeout = setTimeout(() => {
-            if (isPlayingRef.current && callback) callback();
-          }, 500);
-          activeTimeoutsRef.current.push(decreaseSizeTimeout);
-          
-        } else {
-          // Unknown action, just proceed
-          if (callback) setTimeout(() => callback(), 100);
-        }
-        break;
-    }
-  };
-
   // Check for collisions among all sprites
   const checkAllCollisions = () => {
     if (!isPlayingRef.current) return false;
     
-    // Skip if collision already occurred in this cycle
-    if (cycleCollisionOccurred) {
+    // Skip if collision already occurred
+    if (collisionOccurredRef.current) {
       return false;
     }
     
@@ -647,76 +363,71 @@ function App() {
         
         const COLLISION_THRESHOLD = 50; // Adjust based on sprite size
         
-        // If collision detected, swap animations
+        // If collision detected, immediately swap actions
         if (distance < COLLISION_THRESHOLD) {
           console.log(`Collision detected between Sprite ${sprite1.id} and Sprite ${sprite2.id}!`);
           
-          // Mark that a collision occurred in this cycle
-          cycleCollisionOccurred = true;
+          // Mark that a collision occurred
+          collisionOccurredRef.current = true;
           
-          // Save current actions before swapping
-          const sprite1Actions = [...sprite1.actions];
-          const sprite1Actions2 = [...sprite1.actions2];
-          
-          // Stop all animations
+          // Clear all running timeouts to stop animations
           clearAllTimeouts();
           
-          // Swap actions between sprites
-          setSprites(prevSprites => 
-            prevSprites.map(s => {
+          // Store actions to swap
+          const sprite1Actions = [...sprite1.actions];
+          const sprite1Actions2 = [...sprite1.actions2];
+          const sprite2Actions = [...sprite2.actions];
+          const sprite2Actions2 = [...sprite2.actions2];
+          
+          // Update sprites with swapped actions
+          setSprites(prev => {
+            return prev.map(s => {
               if (s.id === sprite1.id) {
-                return { 
-                  ...s, 
-                  actions: [...sprite2.actions], 
-                  actions2: [...sprite2.actions2],
-                  collided: true  // Mark as collided
+                return {
+                  ...s,
+                  actions: sprite2Actions,
+                  actions2: sprite2Actions2
                 };
-              } else if (s.id === sprite2.id) {
-                return { 
-                  ...s, 
-                  actions: sprite1Actions, 
-                  actions2: sprite1Actions2,
-                  collided: true  // Mark as collided
+              }
+              if (s.id === sprite2.id) {
+                return {
+                  ...s,
+                  actions: sprite1Actions,
+                  actions2: sprite1Actions2
                 };
               }
               return s;
-            })
-          );
+            });
+          });
           
-          // Restart animations with swapped actions immediately
+          // Force immediate restart of animations
           setTimeout(() => {
-            // If we're still playing
+            // Reset collision flag
+            collisionOccurredRef.current = false;
+            
+            // Force a restart of all animations with swapped actions
             if (isPlayingRef.current) {
-              // For each sprite, execute its actions with the swapped actions
-              sprites.forEach(sprite => {
-                // Get the correct swapped actions
-                let actionsToUse;
-                if (sprite.id === sprite1.id) {
-                  actionsToUse = sprite2.actions;
-                } else if (sprite.id === sprite2.id) {
-                  actionsToUse = sprite1Actions;
-                } else {
-                  actionsToUse = sprite.actions;
+              const updatedSprites = sprites.map(s => {
+                if (s.id === sprite1.id) {
+                  return {
+                    ...s,
+                    actions: sprite2Actions,
+                    actions2: sprite2Actions2
+                  };
                 }
-                
-                // Expand actions
-                let expandedActions = [];
-                
-                let repeatIndex = actionsToUse.indexOf('repeat');
-                if (repeatIndex > 0) {
-                  // Get actions before repeat
-                  const actionsToRepeat = actionsToUse.slice(0, repeatIndex);
-                  // Add them multiple times
-                  for (let i = 0; i < REPEAT_COUNT; i++) {
-                    expandedActions = [...expandedActions, ...actionsToRepeat];
-                  }
-                } else {
-                  // No repeat, just add the actions
-                  expandedActions = [...expandedActions, ...actionsToUse];
+                if (s.id === sprite2.id) {
+                  return {
+                    ...s,
+                    actions: sprite1Actions,
+                    actions2: sprite1Actions2
+                  };
                 }
-                
-                // Remove any repeat tokens
-                expandedActions = expandedActions.filter(action => action !== 'repeat');
+                return s;
+              });
+              
+              // Run animations with swapped actions
+              updatedSprites.forEach(sprite => {
+                const expandedActions = expandActionsForSprite(sprite);
                 
                 if (expandedActions.length === 0) {
                   return; // Skip if no actions
@@ -738,8 +449,8 @@ function App() {
                   executeAction(sprite, currentAction, executeNextAction);
                 };
                 
-                // Start executing actions
-                const startTimeout = setTimeout(executeNextAction, 100);
+                // Start with minimal delay
+                const startTimeout = setTimeout(executeNextAction, 50);
                 activeTimeoutsRef.current.push(startTimeout);
               });
             }
@@ -752,6 +463,376 @@ function App() {
     
     return false;
   };
+
+  // Execute a single action
+  const executeAction = (sprite, action, callback) => {
+    // Stop if we're no longer playing
+    if (!isPlayingRef.current) {
+      return;
+    }
+    
+    console.log('Executing action:', action, 'for sprite:', sprite.id);
+    
+    // Fixed durations for all animations to ensure consistent timing
+    const MOVE_DURATION = 500; // Duration for movement actions (ms)
+    const ROTATION_DURATION = 1000; // Duration for rotation (ms)
+    const SIZE_CHANGE_DURATION = 500; // Duration for size changes (ms)
+    const SAY_DURATION = 1000; // Duration for speech bubbles (ms)
+    
+    switch(action) {
+      case 'moveX':
+        // Move 50 pixels in X direction
+        const newX = sprite.x + 50;
+        setSprites(prevSprites => {
+          return prevSprites.map(s => 
+            s.id === sprite.id ? { ...s, x: newX } : s
+          );
+        });
+        
+        // Check for collisions after state update
+        setTimeout(() => {
+          if (isPlayingRef.current) {
+            // Check for collisions if not already occurred
+            if (!collisionOccurredRef.current) {
+              checkAllCollisions();
+            }
+            
+            // Continue to next action
+            if (isPlayingRef.current && callback) {
+              callback();
+            }
+          }
+        }, MOVE_DURATION);
+        break;
+        
+      case 'moveXMinus10':
+        // Move -10 pixels in X direction
+        const newXMinus = sprite.x - 10;
+        setSprites(prevSprites => {
+          return prevSprites.map(s => 
+            s.id === sprite.id ? { ...s, x: newXMinus } : s
+          );
+        });
+        
+        // Check for collisions after state update
+        setTimeout(() => {
+          if (isPlayingRef.current) {
+            // Check for collisions if not already occurred
+            if (!collisionOccurredRef.current) {
+              checkAllCollisions();
+            }
+            
+            // Continue to next action
+            if (isPlayingRef.current && callback) {
+              callback();
+            }
+          }
+        }, MOVE_DURATION);
+        break;
+        
+      case 'moveXPlus10':
+        // Move +10 pixels in X direction
+        const newXPlus = sprite.x + 10;
+        setSprites(prevSprites => {
+          return prevSprites.map(s => 
+            s.id === sprite.id ? { ...s, x: newXPlus } : s
+          );
+        });
+        
+        // Check for collisions after state update
+        setTimeout(() => {
+          if (isPlayingRef.current) {
+            // Check for collisions if not already occurred
+            if (!collisionOccurredRef.current) {
+              checkAllCollisions();
+            }
+            
+            // Continue to next action
+            if (isPlayingRef.current && callback) {
+              callback();
+            }
+          }
+        }, MOVE_DURATION);
+        break;
+        
+      case 'moveY':
+        // Move 50 pixels in Y direction
+        const newY = sprite.y + 50;
+        setSprites(prevSprites => {
+          return prevSprites.map(s => 
+            s.id === sprite.id ? { ...s, y: newY } : s
+          );
+        });
+        
+        // Check for collisions after state update
+        setTimeout(() => {
+          if (isPlayingRef.current) {
+            // Check for collisions if not already occurred
+            if (!collisionOccurredRef.current) {
+              checkAllCollisions();
+            }
+            
+            // Continue to next action
+            if (isPlayingRef.current && callback) {
+              callback();
+            }
+          }
+        }, MOVE_DURATION);
+        break;
+        
+      case 'goTo00':
+        // Move to position 0,0
+        setSprites(prevSprites => {
+          return prevSprites.map(s => 
+            s.id === sprite.id ? { ...s, x: 0, y: 0 } : s
+          );
+        });
+        
+        // Check for collisions after state update
+        setTimeout(() => {
+          if (isPlayingRef.current) {
+            // Check for collisions if not already occurred
+            if (!collisionOccurredRef.current) {
+              checkAllCollisions();
+            }
+            
+            // Continue to next action
+            if (isPlayingRef.current && callback) {
+              callback();
+            }
+          }
+        }, MOVE_DURATION);
+        break;
+        
+      case 'moveXY':
+        // Move 50 pixels in both X and Y
+        const newXY = { x: sprite.x + 50, y: sprite.y + 50 };
+        setSprites(prevSprites => {
+          return prevSprites.map(s => 
+            s.id === sprite.id ? { ...s, ...newXY } : s
+          );
+        });
+        
+        // Check for collisions after state update
+        setTimeout(() => {
+          if (isPlayingRef.current) {
+            // Check for collisions if not already occurred
+            if (!collisionOccurredRef.current) {
+              checkAllCollisions();
+            }
+            
+            // Continue to next action
+            if (isPlayingRef.current && callback) {
+              callback();
+            }
+          }
+        }, MOVE_DURATION);
+        break;
+        
+      case 'goRandom':
+        // Move to random position
+        if (canvasRef.current) {
+          const rect = canvasRef.current.getBoundingClientRect();
+          const randomX = Math.floor(Math.random() * (rect.width - 50));
+          const randomY = Math.floor(Math.random() * (rect.height - 50));
+          
+          setSprites(prevSprites => {
+            return prevSprites.map(s => 
+              s.id === sprite.id ? { ...s, x: randomX, y: randomY } : s
+            );
+          });
+        }
+        
+        // Check for collisions after state update
+        setTimeout(() => {
+          if (isPlayingRef.current) {
+            // Check for collisions if not already occurred
+            if (!collisionOccurredRef.current) {
+              checkAllCollisions();
+            }
+            
+            // Continue to next action
+            if (isPlayingRef.current && callback) {
+              callback();
+            }
+          }
+        }, MOVE_DURATION);
+        break;
+      
+      // Other cases (non-movement)
+      default:
+        // For other actions like say hello, rotate, change size
+        if (action === 'sayHello' || action === 'sayHello1Sec') {
+          // Display speech bubble
+          setMessage({ 
+            text: 'Hello!', 
+            spriteId: sprite.id,
+            timer: null
+          });
+          
+          const timer = setTimeout(() => {
+            if (isPlayingRef.current) {
+              setMessage({ text: '', timer: null });
+              if (callback) callback();
+            }
+          }, SAY_DURATION);
+          activeTimeoutsRef.current.push(timer);
+          setMessage(prev => ({ ...prev, timer }));
+          
+        } else if (action === 'rotate') {
+          // Rotate the sprite
+          setSprites(prevSprites => {
+            const updatedSprite = prevSprites.find(s => s.id === sprite.id);
+            if (!updatedSprite) return prevSprites;
+            
+            const currentRotation = updatedSprite.rotation || 0;
+            return prevSprites.map(s => 
+              s.id === sprite.id ? { 
+                ...s, 
+                rotation: currentRotation + 360  // Full 360-degree rotation
+              } : s
+            );
+          });
+          
+          const rotateTimeout = setTimeout(() => {
+            if (isPlayingRef.current && callback) callback();
+          }, ROTATION_DURATION);
+          activeTimeoutsRef.current.push(rotateTimeout);
+          
+        } else if (action === 'increaseSize') {
+          // Increase sprite size
+          setSprites(prevSprites => {
+            const updatedSprite = prevSprites.find(s => s.id === sprite.id);
+            if (!updatedSprite) return prevSprites;
+            
+            return prevSprites.map(s => 
+              s.id === sprite.id ? { ...s, size: s.size * 1.2 } : s
+            );
+          });
+          
+          const increaseSizeTimeout = setTimeout(() => {
+            if (isPlayingRef.current && callback) callback();
+          }, SIZE_CHANGE_DURATION);
+          activeTimeoutsRef.current.push(increaseSizeTimeout);
+          
+        } else if (action === 'decreaseSize') {
+          // Decrease sprite size
+          setSprites(prevSprites => {
+            const updatedSprite = prevSprites.find(s => s.id === sprite.id);
+            if (!updatedSprite) return prevSprites;
+            
+            return prevSprites.map(s => 
+              s.id === sprite.id ? { ...s, size: Math.max(0.5, s.size * 0.8) } : s
+            );
+          });
+          
+          const decreaseSizeTimeout = setTimeout(() => {
+            if (isPlayingRef.current && callback) callback();
+          }, SIZE_CHANGE_DURATION);
+          activeTimeoutsRef.current.push(decreaseSizeTimeout);
+          
+        } else {
+          // Unknown action, just proceed
+          if (callback) setTimeout(() => callback(), 100);
+        }
+        break;
+    }
+  };
+
+  // Handle play button click
+  const handlePlay = () => {
+    // If already playing, stop first
+    if (isPlaying) {
+      setIsPlaying(false);
+      isPlayingRef.current = false;
+      clearAllTimeouts();
+      return;
+    }
+    
+    // Clear any existing timeouts before starting
+    clearAllTimeouts();
+    
+    // Reset collision flag
+    collisionOccurredRef.current = false;
+    
+    // Set playing state
+    setIsPlaying(true);
+    isPlayingRef.current = true;
+    
+    // Start animations directly
+    sprites.forEach(sprite => {
+      // Expand the actions for this sprite
+      const expandedActions = expandActionsForSprite(sprite);
+      
+      if (expandedActions.length === 0) {
+        return; // Skip if no actions
+      }
+      
+      console.log(`Sprite ${sprite.id} has ${expandedActions.length} expanded actions:`, expandedActions);
+      
+      // Start executing actions from the beginning for this sprite
+      let actionIndex = 0;
+      
+      const executeNextAction = () => {
+        // Stop if we're done or no longer playing
+        if (!isPlayingRef.current || actionIndex >= expandedActions.length) {
+          return;
+        }
+        
+        // Get the current action and increment index
+        const currentAction = expandedActions[actionIndex++];
+        
+        // Make sure we still have a valid sprite
+        const currentSprite = sprites.find(s => s.id === sprite.id);
+        if (!currentSprite) {
+          return;
+        }
+        
+        console.log(`Sprite ${sprite.id} executing action:`, currentAction, `(${actionIndex}/${expandedActions.length})`);
+        
+        // Execute the action with callback to next action
+        executeAction(currentSprite, currentAction, executeNextAction);
+      };
+      
+      // Start with delay to ensure state is settled
+      const startTimeout = setTimeout(executeNextAction, 50);
+      activeTimeoutsRef.current.push(startTimeout);
+    });
+    
+    // Set a timeout to check if all sprites have finished their actions
+    const checkFinishedTimeout = setInterval(() => {
+      if (!isPlayingRef.current) {
+        clearInterval(checkFinishedTimeout);
+        return;
+      }
+      
+      // Check if any active timeouts remain besides this interval
+      if (activeTimeoutsRef.current.length <= 1) {
+        // All animations have finished
+        setIsPlaying(false);
+        isPlayingRef.current = false;
+        
+        // Reset collision flag when animations complete
+        collisionOccurredRef.current = false;
+        
+        clearInterval(checkFinishedTimeout);
+      }
+    }, 500);
+    activeTimeoutsRef.current.push(checkFinishedTimeout);
+  };
+
+  // Add event listener for page unload to clear timeouts
+  useEffect(() => {
+    const handleUnload = () => {
+      clearAllTimeouts();
+    };
+    
+    window.addEventListener('beforeunload', handleUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+    };
+  }, []);
 
   // Main render - for code screen
   if (showCodeScreen) {
@@ -1245,8 +1326,6 @@ function App() {
           overflow: 'hidden'
         }}
       >
-        {/* Remove coordinate axis lines and (0,0) label */}
-        
         {sprites.map(sprite => (
           <div 
             key={sprite.id}
@@ -1258,7 +1337,7 @@ function App() {
               cursor: isPlaying ? 'default' : 'move',
               userSelect: 'none',
               textAlign: 'center',
-              transition: isPlaying ? 'all 0.5s linear' : 'none',
+              transition: isPlaying ? 'left 0.5s ease-in-out, top 0.5s ease-in-out, transform 0.5s ease-in-out' : 'none',
               padding: '0',
               border: 'none',
               borderRadius: '0',
@@ -1294,7 +1373,7 @@ function App() {
                   height: `${50 * sprite.size}px`,
                   filter: sprite.id === activeSpriteId ? 'drop-shadow(0 0 5px #4a90e2)' : 'none',
                   transform: sprite.rotation ? `rotate(${sprite.rotation}deg)` : 'none',
-                  transition: isPlaying ? 'all 0.5s linear' : 'none'
+                  transition: isPlaying ? 'transform 1s ease-in-out, width 0.5s ease-in-out, height 0.5s ease-in-out' : 'none'
                 }}
               />
             ) : (
@@ -1306,7 +1385,7 @@ function App() {
                   height: `${35 * sprite.size}px`,
                   filter: sprite.id === activeSpriteId ? 'drop-shadow(0 0 5px #4a90e2)' : 'none',
                   transform: sprite.rotation ? `rotate(${sprite.rotation}deg)` : 'none',
-                  transition: isPlaying ? 'all 0.5s linear' : 'none'
+                  transition: isPlaying ? 'transform 1s ease-in-out, width 0.5s ease-in-out, height 0.5s ease-in-out' : 'none'
                 }}
               />
             )}
@@ -1664,4 +1743,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

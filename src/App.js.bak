@@ -287,10 +287,10 @@ function App() {
     setIsPlaying(true);
     isPlayingRef.current = true;
     
-    // Reset collision flag when starting
+    // Reset collision flag when starting a new cycle
     cycleCollisionOccurred = false;
     
-    // For each sprite, execute its actions
+    // For each sprite, expand and execute its actions
     sprites.forEach(sprite => {
       // Expand the actions for this sprite
       const expandedActions = expandActionsForSprite(sprite);
@@ -299,7 +299,7 @@ function App() {
         return; // Skip if no actions
       }
       
-      console.log(`Sprite ${sprite.id} has ${expandedActions.length} expanded actions:`, expandedActions);
+      console.log(`Sprite ${sprite.id} (${sprite.type}) has ${expandedActions.length} expanded actions:`, expandedActions);
       
       // Start executing actions from the beginning for this sprite
       let actionIndex = 0;
@@ -319,7 +319,7 @@ function App() {
           return;
         }
         
-        console.log(`Sprite ${sprite.id} executing action:`, currentAction, `(${actionIndex}/${expandedActions.length})`);
+        console.log(`Sprite ${sprite.id} (${sprite.type}) executing action:`, currentAction, `(${actionIndex}/${expandedActions.length})`);
         
         // Execute the action with callback to next action
         executeAction(currentSprite, currentAction, executeNextAction);
@@ -343,7 +343,7 @@ function App() {
         setIsPlaying(false);
         isPlayingRef.current = false;
         
-        // Reset collision flag when animations complete
+        // Reset collision flag when cycle completes
         cycleCollisionOccurred = false;
         
         clearInterval(checkFinishedTimeout);
@@ -654,14 +654,10 @@ function App() {
           // Mark that a collision occurred in this cycle
           cycleCollisionOccurred = true;
           
-          // Save current actions before swapping
-          const sprite1Actions = [...sprite1.actions];
-          const sprite1Actions2 = [...sprite1.actions2];
+          // Swap actions between sprites, but don't stop animations
+          const tempActions1 = [...sprite1.actions];
+          const tempActions2 = [...sprite1.actions2];
           
-          // Stop all animations
-          clearAllTimeouts();
-          
-          // Swap actions between sprites
           setSprites(prevSprites => 
             prevSprites.map(s => {
               if (s.id === sprite1.id) {
@@ -674,8 +670,8 @@ function App() {
               } else if (s.id === sprite2.id) {
                 return { 
                   ...s, 
-                  actions: sprite1Actions, 
-                  actions2: sprite1Actions2,
+                  actions: tempActions1, 
+                  actions2: tempActions2,
                   collided: true  // Mark as collided
                 };
               }
@@ -683,67 +679,14 @@ function App() {
             })
           );
           
-          // Restart animations with swapped actions immediately
-          setTimeout(() => {
-            // If we're still playing
-            if (isPlayingRef.current) {
-              // For each sprite, execute its actions with the swapped actions
-              sprites.forEach(sprite => {
-                // Get the correct swapped actions
-                let actionsToUse;
-                if (sprite.id === sprite1.id) {
-                  actionsToUse = sprite2.actions;
-                } else if (sprite.id === sprite2.id) {
-                  actionsToUse = sprite1Actions;
-                } else {
-                  actionsToUse = sprite.actions;
-                }
-                
-                // Expand actions
-                let expandedActions = [];
-                
-                let repeatIndex = actionsToUse.indexOf('repeat');
-                if (repeatIndex > 0) {
-                  // Get actions before repeat
-                  const actionsToRepeat = actionsToUse.slice(0, repeatIndex);
-                  // Add them multiple times
-                  for (let i = 0; i < REPEAT_COUNT; i++) {
-                    expandedActions = [...expandedActions, ...actionsToRepeat];
-                  }
-                } else {
-                  // No repeat, just add the actions
-                  expandedActions = [...expandedActions, ...actionsToUse];
-                }
-                
-                // Remove any repeat tokens
-                expandedActions = expandedActions.filter(action => action !== 'repeat');
-                
-                if (expandedActions.length === 0) {
-                  return; // Skip if no actions
-                }
-                
-                // Start executing actions from the beginning for this sprite
-                let actionIndex = 0;
-                
-                const executeNextAction = () => {
-                  // Stop if we're done or no longer playing
-                  if (!isPlayingRef.current || actionIndex >= expandedActions.length) {
-                    return;
-                  }
-                  
-                  // Get the current action and increment index
-                  const currentAction = expandedActions[actionIndex++];
-                  
-                  // Execute the action with callback to next action
-                  executeAction(sprite, currentAction, executeNextAction);
-                };
-                
-                // Start executing actions
-                const startTimeout = setTimeout(executeNextAction, 100);
-                activeTimeoutsRef.current.push(startTimeout);
-              });
-            }
-          }, 100);
+          // Show collision notification
+          setMessage({
+            text: 'Collision!',
+            spriteId: sprite1.id,
+            timer: setTimeout(() => {
+              setMessage({ text: '', timer: null });
+            }, 1000)
+          });
           
           return true;
         }
@@ -1258,7 +1201,7 @@ function App() {
               cursor: isPlaying ? 'default' : 'move',
               userSelect: 'none',
               textAlign: 'center',
-              transition: isPlaying ? 'all 0.5s linear' : 'none',
+              transition: isPlaying ? 'all 0.5s ease-in-out' : 'none',
               padding: '0',
               border: 'none',
               borderRadius: '0',
@@ -1294,7 +1237,7 @@ function App() {
                   height: `${50 * sprite.size}px`,
                   filter: sprite.id === activeSpriteId ? 'drop-shadow(0 0 5px #4a90e2)' : 'none',
                   transform: sprite.rotation ? `rotate(${sprite.rotation}deg)` : 'none',
-                  transition: isPlaying ? 'all 0.5s linear' : 'none'
+                  transition: isPlaying ? 'all 0.5s ease-in-out' : 'none'
                 }}
               />
             ) : (
@@ -1306,7 +1249,7 @@ function App() {
                   height: `${35 * sprite.size}px`,
                   filter: sprite.id === activeSpriteId ? 'drop-shadow(0 0 5px #4a90e2)' : 'none',
                   transform: sprite.rotation ? `rotate(${sprite.rotation}deg)` : 'none',
-                  transition: isPlaying ? 'all 0.5s linear' : 'none'
+                  transition: isPlaying ? 'all 0.5s ease-in-out' : 'none'
                 }}
               />
             )}
