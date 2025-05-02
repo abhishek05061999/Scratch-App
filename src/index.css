@@ -1,0 +1,214 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+.scratch-app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background-color: #4299e1;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tabs {
+  display: flex;
+  margin-top: 10px;
+}
+
+.tab {
+  padding: 8px 16px;
+  margin: 0 5px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 4px 4px 0 0;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.tab.active {
+  background-color: white;
+  color: #3182ce;
+}
+
+.canvas-container {
+  flex: 1;
+  position: relative;
+  background-color: white;
+  overflow: hidden;
+}
+
+.coordinate-display {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  background-color: #f0f0f0;
+}
+
+.coordinate {
+  margin: 0 10px;
+}
+
+.coordinate span {
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.blocks-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-top: 1px solid #ddd;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.panel-section {
+  margin-bottom: 15px;
+}
+
+.panel-section h3 {
+  margin: 0 0 10px 0;
+  color: #2d3748;
+  font-size: 16px;
+}
+
+.motion-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.block {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.motion-block {
+  background-color: #4299e1;
+  color: white;
+}
+
+.motion-block:hover {
+  background-color: #3182ce;
+}
+
+.animation-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.animation-row {
+  display: flex;
+  gap: 10px;
+}
+
+.animation-block {
+  background-color: #48bb78;
+  color: white;
+  flex: 1;
+}
+
+.animation-block:hover {
+  background-color: #38a169;
+}
+
+.action-panel {
+  display: flex;
+  justify-content: center;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-top: 1px solid #ddd;
+  gap: 10px;
+}
+
+.action-button {
+  background-color: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.action-button:hover {
+  background-color: #38a169;
+}
+
+.action-button.play {
+  background-color: #4299e1;
+}
+
+.action-button.play:hover {
+  background-color: #3182ce;
+}
+
+.action-button.stop {
+  background-color: #f56565;
+}
+
+.action-button.stop:hover {
+  background-color: #e53e3e;
+}
+
+.control-panel {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  background-color: #e0e0e0;
+}
+
+.add-sprite-btn {
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.add-sprite-btn:hover {
+  background-color: #3182ce;
+}
+
+/* Hide any injected debug info */
+[data-debug] {
+  display: none !important;
+} 

@@ -1,0 +1,922 @@
+/* Scratch-App Modern Styling */
+
+/* Custom fonts */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+
+/* Custom properties */
+:root {
+  --primary-color: #4a90e2;
+  --primary-dark: #3a80d2;
+  --secondary-color: #4CAF50;
+  --secondary-dark: #3d9c40;
+  --danger-color: #f44336;
+  --danger-dark: #d32f2f;
+  --background-color: #f9f9f9;
+  --action-block-color: #4a90e2;
+  --action-block-hover: #3a80d2;
+  --text-color: #333333;
+  --light-gray: #f0f0f0;
+  --border-color: #e0e0e0;
+  --block-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  --button-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  --canvas-bg: linear-gradient(to bottom, #ffffff, #f5f5f5);
+  --card-radius: 8px;
+  --transition-speed: 0.3s;
+}
+
+/* Basic resets and page setup */
+body {
+  margin: 0;
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+/* Main container styles */
+.scratch-app {
+  max-width: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  border-radius: var(--card-radius);
+  background-color: white;
+}
+
+/* Header styles */
+.app-header {
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.app-title {
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.5px;
+}
+
+/* Buttons */
+.btn {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-speed) ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--button-shadow);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: var(--danger-dark);
+  transform: translateY(-2px);
+}
+
+.btn-circle {
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 18px;
+}
+
+.btn-small {
+  font-size: 14px;
+  padding: 5px 10px;
+}
+
+/* Canvas area */
+.canvas-area {
+  background: var(--canvas-bg);
+  min-height: 50vh;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-color);
+  transition: all var(--transition-speed) ease;
+}
+
+/* Completely new sprite styling to ensure center positioning */
+.canvas-container {
+  position: relative;
+  flex: 1;
+  background-color: white;
+  margin: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 300px;
+}
+
+/* Coordinate axes */
+.x-axis {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #e2e8f0;
+  z-index: 1;
+}
+
+.y-axis {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: #e2e8f0;
+  z-index: 1;
+}
+
+/* New sprite styling */
+.sprite {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 50px !important;
+  height: 50px !important;
+  z-index: 9999 !important;
+}
+
+.sprite img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+/* Speech bubble */
+.speech-bubble {
+  position: absolute;
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 15px;
+  padding: 8px 15px;
+  font-size: 14px;
+  z-index: 10;
+  box-shadow: var(--block-shadow);
+  min-width: 60px;
+  text-align: center;
+}
+
+.speech-bubble:after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 10px 10px 0;
+  border-style: solid;
+  border-color: white transparent transparent;
+}
+
+/* Coordinate display */
+.coordinate-display {
+  display: flex;
+  padding: 10px 15px;
+  background-color: white;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.coordinate-item {
+  margin-right: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.coordinate-label {
+  font-weight: 600;
+  margin-right: 5px;
+}
+
+.coordinate-value {
+  background-color: var(--light-gray);
+  padding: 3px 8px;
+  border-radius: 4px;
+  min-width: 30px;
+  text-align: center;
+}
+
+/* Sprite selector buttons */
+.sprite-selector {
+  display: flex;
+  padding: 10px 15px;
+  background-color: white;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sprite-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-speed) ease;
+  font-weight: 600;
+}
+
+.sprite-button.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.sprite-button:not(.active) {
+  background-color: var(--light-gray);
+}
+
+.sprite-button:hover:not(.active) {
+  background-color: #e0e0e0;
+}
+
+.sprite-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+
+/* Action buttons */
+.action-buttons {
+  padding: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  background-color: white;
+}
+
+.action-button-container {
+  flex: 1;
+  min-width: 150px;
+}
+
+.action-button {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: var(--card-radius);
+  transition: all var(--transition-speed) ease;
+}
+
+/* Action list */
+.action-list {
+  padding: 0 15px 15px 15px;
+  background-color: white;
+}
+
+.action-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.action-list-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.action-item {
+  background-color: var(--light-gray);
+  padding: 8px 35px 8px 12px;
+  margin: 0 5px 8px 0;
+  border-radius: 6px;
+  font-size: 14px;
+  position: relative;
+  display: inline-block;
+  transition: all var(--transition-speed) ease;
+}
+
+.action-item:hover {
+  background-color: #e8e8e8;
+}
+
+.action-tab-prefix {
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-right: 5px;
+}
+
+.delete-action {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--danger-color);
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-speed) ease;
+  border: none;
+  padding: 0;
+}
+
+.delete-action:hover {
+  background-color: var(--danger-dark);
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Play button */
+.play-button {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(145deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all var(--transition-speed) ease;
+  z-index: 100;
+}
+
+.play-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.play-button:active {
+  transform: scale(0.95);
+}
+
+/* Code screen specific styles */
+.code-screen {
+  background-color: white;
+  min-height: 100vh;
+}
+
+.code-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px); /* Adjust based on header height */
+}
+
+.code-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.code-blocks {
+  flex: 1;
+  border-right: 1px solid var(--border-color);
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.code-actions {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.section-header {
+  text-align: center;
+  padding: 10px;
+  background-color: var(--light-gray);
+  margin-bottom: 15px;
+  border-radius: var(--card-radius);
+  font-weight: 600;
+}
+
+.code-block {
+  background: linear-gradient(145deg, var(--action-block-color), var(--action-block-hover));
+  color: white;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  border-radius: var(--card-radius);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all var(--transition-speed) ease;
+  box-shadow: var(--block-shadow);
+}
+
+.code-block:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.code-block:active {
+  transform: translateY(0px);
+}
+
+.action-tabs {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+.action-tab {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-speed) ease;
+}
+
+.action-tab.active {
+  background-color: var(--secondary-color);
+  color: white;
+  border-radius: var(--card-radius);
+}
+
+.action-tab:not(.active) {
+  background-color: var(--light-gray);
+  border-radius: var(--card-radius);
+}
+
+.action-tab:first-child {
+  margin-right: 5px;
+}
+
+.action-tab:last-child {
+  margin-left: 5px;
+}
+
+.utility-button {
+  text-align: center;
+  padding: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  border-radius: var(--card-radius);
+  transition: all var(--transition-speed) ease;
+}
+
+.utility-button.copy {
+  background-color: #2196f3;
+  color: white;
+}
+
+.utility-button.clear {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.utility-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.selected-action {
+  background-color: var(--action-block-color);
+  color: white;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: var(--card-radius);
+  position: relative;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .code-content {
+    flex-direction: column;
+  }
+  
+  .code-blocks, .code-actions {
+    flex: none;
+    max-height: 50vh;
+    border-right: none;
+  }
+  
+  .code-blocks {
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .action-button-container {
+    min-width: 120px;
+  }
+}
+
+/* Animations */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes rotate360 {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.rotating {
+  animation: rotate360 1s linear;
+}
+
+/* Transitions */
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 300ms;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+/* Scratch App Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+}
+
+.scratch-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+}
+
+/* Header */
+.scratch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #4299e1;
+  color: white;
+  padding: 10px 20px;
+}
+
+.back-button, .done-button {
+  cursor: pointer;
+  padding: 5px 10px;
+  background-color: #3182ce;
+  border-radius: 4px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Main Content */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Bottom panel */
+.bottom-panel {
+  display: flex;
+  height: 240px;
+  margin: 0 10px 10px;
+}
+
+/* Sprite info */
+.sprite-info {
+  background-color: white;
+  padding: 10px;
+  width: 120px;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sprite-label {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.sprite-info input {
+  padding: 5px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+}
+
+.coordinate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.coordinate label {
+  font-weight: bold;
+  width: 10px;
+}
+
+.coordinate input {
+  width: 60px;
+}
+
+/* Code panel */
+.code-panel {
+  flex: 1;
+  background-color: white;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tabs button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background-color: #f7fafc;
+  cursor: pointer;
+  font-weight: bold;
+  color: #718096;
+}
+
+.tabs button.active {
+  background-color: #ebf8ff;
+  color: #3182ce;
+}
+
+/* Tab content */
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+/* Code blocks */
+.code-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.code-block {
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  font-weight: 500;
+}
+
+.code-block.motion {
+  background-color: #4299e1;
+}
+
+.code-block.looks {
+  background-color: #9f7aea;
+}
+
+.code-block.control {
+  background-color: #ecc94b;
+}
+
+.code-block.events {
+  background-color: #f6ad55;
+}
+
+/* Action blocks */
+.action-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.action-block {
+  padding: 12px;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+}
+
+.action-block.green {
+  background-color: #48bb78;
+}
+
+.action-block.green-light {
+  background-color: #68d391;
+}
+
+.action-block.green-dark {
+  background-color: #38a169;
+}
+
+.action-info {
+  background-color: #f7fafc;
+  color: #4a5568;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Bottom buttons */
+.bottom-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 10px 10px;
+}
+
+.add-actions-button, .add-sprite-button {
+  flex: 1;
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  font-weight: bold;
+  margin: 0 5px;
+}
+
+.add-actions-button:hover, .add-sprite-button:hover {
+  background-color: #3182ce;
+}
+
+/* New sprite styling */
+.canvas {
+  flex: 1;
+  position: relative;
+  background-color: white;
+  margin: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.center-lines {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.horizontal-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #e2e8f0;
+}
+
+.vertical-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: #e2e8f0;
+}
+
+.sprite {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  z-index: 10;
+}
+
+.sprite img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.play-button {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px;
+  padding-bottom: 10px;
+}
+
+.sprite-info {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.coordinates {
+  display: flex;
+  margin-top: 10px;
+  gap: 15px;
+}
+
+.coordinates label {
+  margin-right: 5px;
+  font-weight: bold;
+}
+
+.coordinates input {
+  width: 50px;
+  padding: 5px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.buttons button {
+  padding: 10px 15px;
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.buttons button:hover {
+  background-color: #3182ce;
+} 
