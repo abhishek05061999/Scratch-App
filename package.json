@@ -15,6 +15,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
+    "scratch-app": "file:",
     "typescript": "^4.9.4",
     "uuid": "^9.0.1",
     "web-vitals": "^2.1.4"
@@ -50,5 +51,9 @@
     "postcss": "^7.0.39",
     "postcss-preset-env": "^10.1.6",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.2.17"
+  },
+  "resolutions": {
+    "postcss": "^8.4.31",
+    "browserslist": "^4.21.5"
   }
 }
